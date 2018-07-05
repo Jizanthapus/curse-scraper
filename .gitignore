@@ -4,6 +4,8 @@ client_secret.json
 credentials.json
 test/
 vars.json
+data_1.json
+data_2.json
 data.json
 
 # Byte-compiled / optimized / DLL files
