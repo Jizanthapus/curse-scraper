@@ -1,0 +1,8 @@
+{
+"spreadsheetId": "<Google Sheet ID>",
+"range1": "'Curse Mods'!A1:B2",
+"range2pre": "'Curse Mods'!A6:E6",
+"modURLpre": "https://minecraft.curseforge.com/projects/",
+"modURLpost": "/files?filter-game-version=2020709689%3A6756",
+"localPath": "<your path where you want the downloads>"
+}
