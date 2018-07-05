@@ -2,7 +2,6 @@
 Created on Jul 4, 2018
 
 TODO: Add parallelism
-TODO: Make sample var file for repo
 
 @author: Alex
 '''
@@ -13,7 +12,9 @@ import sys
 import urllib.request
 from lxml import html
 import os.path
+from multiprocessing.dummy  import Pool
 import requests
+import datetime
 # Imports for Sheets API
 from apiclient.discovery import build
 from httplib2 import Http
@@ -34,10 +35,21 @@ try:
         MOD_URL_PRE = VARS_FROM_FILE.get('modURLpre')
         MOD_URL_POST = VARS_FROM_FILE.get('modURLpost')
         LOCAL_PATH = VARS_FROM_FILE.get('localPath')
+        NUM_OF_PROCESSES = int(VARS_FROM_FILE.get('processes'))
 except FileNotFoundError: 
     print('Variable file not found: ', VARIABLE_FILE)
     sys.exit()
 
+
+def download_entry(ENTRY):
+    '''
+    Function for downloading files
+    '''
+    FILE_PATH = LOCAL_PATH + ENTRY
+    if os.path.isfile(FILE_PATH):
+        print('Already exists: ', ENTRY)
+    else:
+            urllib.request.urlretrieve(FILES_TO_DOWNLOAD[ENTRY], FILE_PATH)
 
 # Setup the Sheets API
 SCOPES = 'https://www.googleapis.com/auth/spreadsheets'
@@ -51,8 +63,6 @@ SERVICE = build('sheets', 'v4', http=CREDS.authorize(Http()))
 # Call the Sheets API
 # RESULT_1 is a range of values that will contain how many mods are in the list and when this program was last run 
 RESULT_1 = SERVICE.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID, range=RANGE_1).execute()                                  
-with open('data_1.json', 'w') as OUTFILE:  
-    json.dump(RESULT_1, OUTFILE)
 
 # Use RESULT_1 to determine how many cells to request for RESULT_2
 NUM_MODS = RESULT_1.get('values')[0][1]
@@ -62,8 +72,6 @@ RANGE_2 = RANGE_2_PRE[:-1] + str(RANGE_2_END)
 
 # RESULT_2 contains: mod names, link, old file id, and a download link
 RESULT_2 = SERVICE.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID, range=RANGE_2).execute()               
-with open('data_2.json', 'w') as OUTFILE:  
-    json.dump(RESULT_2, OUTFILE)
 
 # Use the project id from RESULTS_2 to build the Curse URL and get the files page
 # then find the latest jar and add it to a list to download
@@ -98,15 +106,18 @@ if len(MODS_NEEDING_UPDATES) > 0:
     print()
     
     # Write the updated info back to the sheet
-    BODY = {'values': MODS_ONLY}
-    RESULT_3 = SERVICE.spreadsheets().values().update(spreadsheetId=SPREADSHEET_ID, range=RANGE_2, valueInputOption='USER_ENTERED', body=BODY).execute()
-    
+    MOD_DATA_FOR_SHEET = {'values': MODS_ONLY}
+    RESULT_3 = SERVICE.spreadsheets().values().update(spreadsheetId=SPREADSHEET_ID, range=RANGE_2, valueInputOption='USER_ENTERED', body=MOD_DATA_FOR_SHEET).execute()
+        
     # Download the updated mods
-    for ENTRY in FILES_TO_DOWNLOAD:
-        FILE_PATH = LOCAL_PATH + ENTRY
-        if os.path.isfile(FILE_PATH):
-            print('Already exists: ', ENTRY)
-        else:
-                urllib.request.urlretrieve(FILES_TO_DOWNLOAD[ENTRY], FILE_PATH)
+    pool = Pool(NUM_OF_PROCESSES)
+    pool.map(download_entry, FILES_TO_DOWNLOAD)
 else:
     print('Looks like all the mods are currently up to date')
+    
+# Update the sheet to show this run
+TIME = datetime.datetime.now()
+TIME_STRING = TIME.strftime("%Y-%m-%d %H:%M")
+RESULT_1['values'][1][1] = TIME_STRING
+RESULT_4 = SERVICE.spreadsheets().values().update(spreadsheetId=SPREADSHEET_ID, range=RANGE_1, valueInputOption='USER_ENTERED', body=RESULT_1).execute()
+
