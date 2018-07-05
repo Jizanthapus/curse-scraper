@@ -8,6 +8,8 @@ TODO: Move more variables to the external variable json
 
 @author: Alex
 '''
+
+# Plenty of imports
 import json
 import sys
 import urllib.request
@@ -18,11 +20,12 @@ from apiclient.discovery import build
 from httplib2 import Http
 from oauth2client import file, client, tools
 
-
+# Fire up some variables
 FILES_TO_DOWNLOAD = {}
 MODS_NEEDING_UPDATES = []
 VARIABLE_FILE = 'vars.json'
 
+# Try to open variable file to fire up some more variables
 try:
     with open(VARIABLE_FILE) as FILE:
         VARS_FROM_FILE = json.load(FILE)
@@ -46,6 +49,8 @@ if not CREDS or CREDS.invalid:
     CREDS = tools.run_flow(FLOW, STORE)
 SERVICE = build('sheets', 'v4', http=CREDS.authorize(Http()))
 
+# Look for existing data and get it if it doesn't exist
+# RESULT_1 is a range of values that will contain how many mods are in the list and when this program was last run 
 try:
     with open('data_1.json') as FILE:
         RESULT_1 = json.load(FILE)
@@ -54,15 +59,15 @@ except FileNotFoundError:
     RESULT_1 = SERVICE.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID, range=RANGE_1).execute()                                  
     with open('data_1.json', 'w') as OUTFILE:  
         json.dump(RESULT_1, OUTFILE)
-        
+
+# Use RESULT_1 to determine how many cells to request for RESULT_2
 NUM_MODS = RESULT_1.get('values')[0][1]
 RANGE_2_BEGIN = RANGE_2_PRE[-1:]
-RANGE_2_END = int(NUM_MODS) + int(RANGE_2_BEGIN)
-#print(RANGE_2_BEGIN)
-#print(RANGE_2_END)
+RANGE_2_END = int(NUM_MODS) + int(RANGE_2_BEGIN) - 1
 RANGE_2 = RANGE_2_PRE[:-1] + str(RANGE_2_END)
-#print(RANGE_2)
 
+# Look for existing data and get it if it doesn't exist
+# RESULT_2 contains: mod names, link, old file id, and a download link
 try:
     with open('data_2.json') as FILE:
         RESULT_2 = json.load(FILE)
@@ -71,16 +76,14 @@ except FileNotFoundError:
     with open('data_2.json', 'w') as OUTFILE:  
         json.dump(RESULT_2, OUTFILE)
 
-MOD_INFO = RESULT_2.get('values')
-MODS_ONLY = MOD_INFO[1:]
+# Use the project id from RESULTS_2 to build the Curse URL and get the files page
+# then find the latest jar and add it to a list to download
+MODS_ONLY = RESULT_2.get('values')
 for line in MODS_ONLY:
-    #print('Line: ', line)
     PROJECT_ID = line[2]
     OLD_FILE_ID = line[3]
     MOD_NAME = line[0]
-    #print('Project ID: ', PROJECT_ID)
     MOD_URL = MOD_URL_PRE + PROJECT_ID + MOD_URL_POST
-    #print('Mod URL:', MOD_URL)
     PAGE = requests.get(MOD_URL)
     PAGE_DATA = html.fromstring(PAGE.content)
     for TABLE in PAGE_DATA.xpath('//table[@class="listing listing-project-file project-file-listing b-table b-table-a"]'):
@@ -90,23 +93,24 @@ for line in MODS_ONLY:
         FILENAME = TABLE.xpath('//div[@class="project-file-name-container"]/a/@data-name')[0].replace(' ', '')
         if FILENAME[-4:] != '.jar':
             FILENAME += '.jar'
-        #print(FILENAME)
-        #print('File ID: ', NEW_FILE_ID)
-        #print('Download URL: ', DOWNLOAD_URL)
     if NEW_FILE_ID > OLD_FILE_ID:
         MODS_NEEDING_UPDATES.append(MOD_NAME)
         FILES_TO_DOWNLOAD[FILENAME] = DOWNLOAD_URL
         line[3] = NEW_FILE_ID
     line[4] = DOWNLOAD_URL
-    #print('Line: ', line)
 
-print('Update required for:')
+# List mods we need to update
+print('Update required for the following ', len(MODS_NEEDING_UPDATES), ' mods:')
 for MOD in MODS_NEEDING_UPDATES:
     print(MOD)
 print()
 
+# Write the updated info back to the sheet
+BODY = {'values': MODS_ONLY}
+RESULT_3 = SERVICE.spreadsheets().values().update(spreadsheetId=SPREADSHEET_ID, range=RANGE_2, valueInputOption='USER_ENTERED', body=BODY).execute()
+
+# Download the updated mods
 for ENTRY in FILES_TO_DOWNLOAD:
-    #print('File: ', ENTRY, '\t', 'URL: ', FILES_TO_DOWNLOAD[ENTRY])
     FILE_PATH = LOCAL_PATH + ENTRY
     if os.path.isfile(FILE_PATH):
         print('Already exists: ', ENTRY)
