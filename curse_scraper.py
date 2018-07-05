@@ -1,8 +1,7 @@
 '''
 Created on Jul 4, 2018
-
-
-@author: Alex
+v1.0
+This program obtains a list of mods from a Google Sheet and checks it against info from Curse. When an update is found, it's downloaded. 
 '''
 
 # Plenty of imports
@@ -72,7 +71,7 @@ def get_info_from_curse(line):
         FILENAME = TABLE.xpath('//div[@class="project-file-name-container"]/a/@data-name')[0].replace(' ', '')
         if FILENAME[-4:] != '.jar':
             FILENAME += '.jar'
-        MODIFIED_FILENAME = NEW_FILE_ID + '-' + FILENAME
+        MODIFIED_FILENAME = FILENAME + '-' + NEW_FILE_ID 
     if NEW_FILE_ID > OLD_FILE_ID:
         MODS_NEEDING_UPDATES.append(MOD_NAME)
         FILES_TO_DOWNLOAD[MODIFIED_FILENAME] = DOWNLOAD_URL
