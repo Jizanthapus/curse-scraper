@@ -7,5 +7,6 @@
 "modURLpre": "https://minecraft.curseforge.com/projects/",
 "modURLpost": "/files?filter-game-version=2020709689%3A6756",
 "processes": "4",
+"updateListName": "update_list.json",
 "localPath": "C:/path/to/downloads/"
 }
