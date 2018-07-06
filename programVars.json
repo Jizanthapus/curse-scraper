@@ -1,0 +1,18 @@
+{
+	"userVarsName": "userVars.json",
+	"range1": "'Curse Mods'!B1",
+	"range4": "'Curse Mods'!B2",
+	"range2pre": "'Curse Mods'!A6:E6",
+	"range3pre": "'Curse Mods'!D6:E6",
+	"modURLpre": "https://minecraft.curseforge.com/projects/",
+	"modURLpost": "/files?filter-game-version=",
+	"filters": {
+		"1.7.10": "2020709689%3A4449",
+		"1.8.9": "2020709689%3A5806",
+		"1.10.2": "2020709689%3A6170",
+		"1.12": "1738749986%3A628",
+		"1.12.2": "2020709689%3A6756"
+	},
+	"processes": "4",
+	"updateListName": "update_list.json"
+}

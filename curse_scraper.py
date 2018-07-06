@@ -3,48 +3,56 @@ Created on Jul 4, 2018
 v1.0
 This program obtains a list of mods from a Google Sheet and checks it against info from Curse. When an update is found, it's downloaded. 
 
-TODO: Add OLD_FILE_ID to the filename so it can be used to identify files in the instance for automated updating
-        or output a json file with the mod name, file ID, and jar name
+
 TODO: Print time since last run
 TODO: Collect upload time from Curse to calculate and display how recently the update is
 TODO: (Maybe) Move to beautifulsoup for HTML parsing
-TODO: Split vars file into programVars and userVars for simplicity
-TODO: Add compatibility with other versions of MC
 '''
 
+print('curse-scraper beginning\n')
+
 # Plenty of imports
-import json
-import sys
-import urllib.request
-import urllib.parse
-from lxml import html
-import os.path
-from multiprocessing.dummy  import Pool
-import requests
-import datetime
-# Imports for Sheets API
-from apiclient.discovery import build
-from httplib2 import Http
-from oauth2client import file, client, tools
+try:
+    import json
+    import sys
+    import urllib.request
+    import urllib.parse
+    from lxml import html
+    import os.path
+    from multiprocessing.dummy  import Pool
+    import requests
+    import datetime
+    # Imports for Sheets API
+    from apiclient.discovery import build
+    from httplib2 import Http
+    from oauth2client import file, client, tools
+except ImportError:
+    print('ERROR: Imports missing')
+    sys.exit()
 
 # Try to open variable file to fire up some variables
 try:
-    VARIABLE_FILE = 'vars.json'
-    print('Loading variable file:', VARIABLE_FILE, '\n')
-    with open(VARIABLE_FILE) as FILE:
-        VARS_FROM_FILE = json.load(FILE)
-    SPREADSHEET_ID = VARS_FROM_FILE.get('spreadsheetId')
-    RANGE_1 = VARS_FROM_FILE.get('range1')
-    RANGE_2_PRE = VARS_FROM_FILE.get('range2pre')
-    RANGE_3_PRE = VARS_FROM_FILE.get('range3pre')
-    RANGE_4 = VARS_FROM_FILE.get('range4')
-    MOD_URL_PRE = VARS_FROM_FILE.get('modURLpre')
-    MOD_URL_POST = VARS_FROM_FILE.get('modURLpost')
-    LOCAL_PATH = VARS_FROM_FILE.get('localPath')
-    UPDATE_LIST_NAME = VARS_FROM_FILE.get('updateListName') # Not used yet
-    NUM_OF_PROCESSES = int(VARS_FROM_FILE.get('processes'))
+    PROGRAM_VARS_FILE = 'programVars.json'
+    print('Loading variable file:', PROGRAM_VARS_FILE)
+    with open(PROGRAM_VARS_FILE) as FILE:
+        PROGRAM_VARS = json.load(FILE)
+    USER_VARS_FILE = PROGRAM_VARS.get('userVarsName')
+    print('Loading variable file:', USER_VARS_FILE, '\n')
+    with open(USER_VARS_FILE) as FILE:
+        USER_VARS = json.load(FILE)
+    SPREADSHEET_ID = USER_VARS.get('spreadsheetId')
+    RANGE_1 = PROGRAM_VARS.get('range1')
+    RANGE_2_PRE = PROGRAM_VARS.get('range2pre')
+    RANGE_3_PRE = PROGRAM_VARS.get('range3pre')
+    RANGE_4 = PROGRAM_VARS.get('range4')
+    MOD_URL_PRE = PROGRAM_VARS.get('modURLpre')
+    MOD_URL_POST = PROGRAM_VARS.get('modURLpost')
+    LOCAL_PATH = USER_VARS.get('localPath')
+    UPDATE_LIST_NAME = PROGRAM_VARS.get('updateListName')
+    NUM_OF_PROCESSES = int(PROGRAM_VARS.get('processes'))
+    FILTERS = PROGRAM_VARS.get('filters')
 except FileNotFoundError: 
-    print('Variable file not found: ', VARIABLE_FILE)
+    print('ERROR: One or more of the variable files were not found')
     sys.exit()
 
 print('*** Running with the following settings ***')
@@ -75,15 +83,16 @@ def get_info_from_curse(line):
     '''
     Retrieve the mod info from curse
     '''
-    PROJECT_ID = line[1].split('/')[4]
-    if len(line) == 4:
-        OLD_FILE_ID = int(line[2])
-    else:
-        line.append(0)
-        OLD_FILE_ID = int(line[2])
-        line.append('Error')
     MOD_NAME = line[0]
-    MOD_URL = MOD_URL_PRE + PROJECT_ID + MOD_URL_POST
+    MOD_MC_VER = line[1]
+    PROJECT_ID = line[2].split('/')[4]
+    if len(line) == 5:
+        OLD_FILE_ID = int(line[3])
+    else:
+        while (len(line) > 5):
+            line.append(0)
+        OLD_FILE_ID = int(line[3])
+    MOD_URL = MOD_URL_PRE + PROJECT_ID + MOD_URL_POST + FILTERS.get(MOD_MC_VER)
     print('Checking on', MOD_NAME)
     PAGE = requests.get(MOD_URL)
     PAGE_DATA = html.fromstring(PAGE.content)
@@ -103,8 +112,8 @@ def get_info_from_curse(line):
             sys.exit()
         MODS_NEEDING_UPDATES.append(MOD_NAME)
         FILES_TO_DOWNLOAD[MOD_NAME] = {'currentFileID':NEW_FILE_ID, 'jar':FINAL_FILENAME, 'downloadURL':DOWNLOAD_URL}
-        line[2] = NEW_FILE_ID
-    line[3] = DOWNLOAD_URL
+        line[3] = NEW_FILE_ID
+    line[4] = DOWNLOAD_URL
     
 # Setup the Sheets API
 print('Attempting to contact Sheets\n')
@@ -135,10 +144,10 @@ RESULT_2 = SERVICE.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID, ran
 
 # Use the project id from RESULTS_2 to build the Curse URL and get the files page
 # then find the latest jar and add it to a list to download
-print('Attempting to contact Curse for mod info\n')
+print('Attempting to contact Curse for mod info')
 MODS_ONLY = RESULT_2.get('values')
-print(MODS_ONLY)
 POOL.map(get_info_from_curse, MODS_ONLY)
+print()
 
 # Setup time for reasons
 TIME = datetime.datetime.now()
@@ -162,7 +171,7 @@ if len(MODS_NEEDING_UPDATES) > 0:
                                     'numModsUpdated': len(MODS_NEEDING_UPDATES)},
                         'mods':FILES_TO_DOWNLOAD}
     with open(UPDATE_LIST_NAME_TIME, 'w') as FILE:
-        json.dump(UPDATE_LIST_DATA, FILE)
+        json.dump(UPDATE_LIST_DATA, FILE, indent=4)
     
     # Write the updated info back to the sheet
     for line in MODS_ONLY:

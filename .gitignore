@@ -9,6 +9,7 @@ data_2.json
 data.json
 mod_list.json
 *update_list.json
+userVars.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
