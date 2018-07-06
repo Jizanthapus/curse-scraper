@@ -28,3 +28,4 @@ This program obtains a list of Minecraft mods from a Google Sheet and checks it 
 * `modURLpre` First part of the Curseforge URL (before the project ID)
 * `modURLpost` Second part of the Curseforge URL (after the project ID)
 * `processes` The number of processes that the program will launch when making HTTP requests and downloads from Curse.
+* `updateListName` File where info on the mods updated will be saved
