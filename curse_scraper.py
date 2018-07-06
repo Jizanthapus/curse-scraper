@@ -3,7 +3,6 @@ Created on Jul 4, 2018
 v1.0
 This program obtains a list of mods from a Google Sheet and checks it against info from Curse. When an update is found, it's downloaded. 
 
-
 TODO: Print time since last run
 TODO: Collect upload time from Curse to calculate and display how recently the update is
 TODO: (Maybe) Move to beautifulsoup for HTML parsing
