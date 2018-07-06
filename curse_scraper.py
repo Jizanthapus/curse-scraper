@@ -38,6 +38,7 @@ try:
     MOD_URL_PRE = VARS_FROM_FILE.get('modURLpre')
     MOD_URL_POST = VARS_FROM_FILE.get('modURLpost')
     LOCAL_PATH = VARS_FROM_FILE.get('localPath')
+    UPDATE_LIST_NAME = VARS_FROM_FILE.get('updateListName') # Not used yet
     NUM_OF_PROCESSES = int(VARS_FROM_FILE.get('processes'))
 except FileNotFoundError: 
     print('Variable file not found: ', VARIABLE_FILE)
@@ -51,18 +52,21 @@ print('Files will be downloaded to:', LOCAL_PATH, '\n')
 FILES_TO_DOWNLOAD = {}
 MODS_NEEDING_UPDATES = []
 INFO_TO_WRITE = []
+UPDATE_LIST = []
 POOL = Pool(NUM_OF_PROCESSES)
 
 def download_entry(ENTRY):
     '''
     Function for downloading files
     '''
-    FILE_PATH = LOCAL_PATH + ENTRY
-    if os.path.isfile(FILE_PATH):
-        print('Already exists: ', ENTRY)
+    ENTRY_JAR = FILES_TO_DOWNLOAD[ENTRY][0]
+    ENTRY_PATH = LOCAL_PATH + ENTRY_JAR
+    ENTRY_URL = FILES_TO_DOWNLOAD[ENTRY][1]
+    if os.path.isfile(ENTRY_PATH):
+        print('Already exists:', ENTRY_JAR)
     else:
-            urllib.request.urlretrieve(FILES_TO_DOWNLOAD[ENTRY], FILE_PATH)
-            print('Downloaded:', ENTRY)
+            urllib.request.urlretrieve(ENTRY_URL, ENTRY_PATH)
+            print('Downloaded:', ENTRY, '->', ENTRY_JAR)
 
 def get_info_from_curse(line):
     '''
@@ -90,7 +94,7 @@ def get_info_from_curse(line):
             print('Error: Something changed with the download URL. Report this.')
             sys.exit()
         MODS_NEEDING_UPDATES.append(MOD_NAME)
-        FILES_TO_DOWNLOAD[FILENAME] = DOWNLOAD_URL
+        FILES_TO_DOWNLOAD[MOD_NAME] = {['currentFileID': NEW_FILE_ID, 'jar':FILENAME, 'downloadURL':DOWNLOAD_URL]}
         line[2] = NEW_FILE_ID
     line[3] = DOWNLOAD_URL
     
@@ -141,7 +145,11 @@ if len(MODS_NEEDING_UPDATES) > 0:
     MOD_DATA_FOR_SHEET = {'values': INFO_TO_WRITE}
     print('Writing updated mod info back to Sheets\n')
     RESULT_3 = SERVICE.spreadsheets().values().update(spreadsheetId=SPREADSHEET_ID, range=RANGE_3, valueInputOption='USER_ENTERED', body=MOD_DATA_FOR_SHEET).execute()
-        
+    
+    # Write out a list of the updated mods
+    with open(UPDATE_LIST_NAME, 'w') as FILE:
+        json.dump(FILES_TO_DOWNLOAD, FILE)
+    
     # Download the updated mods
     print('Starting downloads')
     POOL.map(download_entry, FILES_TO_DOWNLOAD)
