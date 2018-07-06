@@ -2,6 +2,10 @@
 Created on Jul 4, 2018
 v1.0
 This program obtains a list of mods from a Google Sheet and checks it against info from Curse. When an update is found, it's downloaded. 
+
+TODO: Print time since last run
+TODO: Collect upload time from Curse to calculate and display how recently the update is
+TODO: (Maybe) Move to beautifulsoup for HTML parsing
 '''
 
 # Plenty of imports
@@ -28,6 +32,7 @@ try:
         RANGE_1 = VARS_FROM_FILE.get('range1')
         RANGE_2_PRE = VARS_FROM_FILE.get('range2pre')
         RANGE_3_PRE = VARS_FROM_FILE.get('range3pre')
+        RANGE_4 = VARS_FROM_FILE.get('range4')
         MOD_URL_PRE = VARS_FROM_FILE.get('modURLpre')
         MOD_URL_POST = VARS_FROM_FILE.get('modURLpost')
         LOCAL_PATH = VARS_FROM_FILE.get('localPath')
@@ -142,13 +147,10 @@ else:
     
 # Update the sheet to show this run
 TIME = datetime.datetime.now()
-TIME_STRING = TIME.strftime("%Y-%m-%d %H:%M")
-if len(RESULT_1['values'][0]) < 2:
-    RESULT_1['values'][0].append(TIME_STRING)
-else:
-    RESULT_1['values'][0][1] = TIME_STRING
+TIME_STRING = [[TIME.strftime("%Y-%m-%d %H:%M")]]
 print('Writing the current time back to Sheets\n')
-RESULT_4 = SERVICE.spreadsheets().values().update(spreadsheetId=SPREADSHEET_ID, range=RANGE_1, valueInputOption='USER_ENTERED', body=RESULT_1).execute()
+TIME_TO_WRITE = {'values': TIME_STRING}
+RESULT_4 = SERVICE.spreadsheets().values().update(spreadsheetId=SPREADSHEET_ID, range=RANGE_4, valueInputOption='USER_ENTERED', body=TIME_TO_WRITE).execute()
 
 print('Program complete\n')
 
