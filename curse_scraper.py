@@ -3,6 +3,8 @@ Created on Jul 4, 2018
 v1.0
 This program obtains a list of mods from a Google Sheet and checks it against info from Curse. When an update is found, it's downloaded. 
 
+TODO: Add OLD_FILE_ID to the filename so it can be used to identify files in the instance for automated updating
+        or output a json file with the mod name, file ID, and jar name
 TODO: Print time since last run
 TODO: Collect upload time from Curse to calculate and display how recently the update is
 TODO: (Maybe) Move to beautifulsoup for HTML parsing
@@ -28,15 +30,15 @@ try:
     print('Loading variable file:', VARIABLE_FILE, '\n')
     with open(VARIABLE_FILE) as FILE:
         VARS_FROM_FILE = json.load(FILE)
-        SPREADSHEET_ID = VARS_FROM_FILE.get('spreadsheetId')
-        RANGE_1 = VARS_FROM_FILE.get('range1')
-        RANGE_2_PRE = VARS_FROM_FILE.get('range2pre')
-        RANGE_3_PRE = VARS_FROM_FILE.get('range3pre')
-        RANGE_4 = VARS_FROM_FILE.get('range4')
-        MOD_URL_PRE = VARS_FROM_FILE.get('modURLpre')
-        MOD_URL_POST = VARS_FROM_FILE.get('modURLpost')
-        LOCAL_PATH = VARS_FROM_FILE.get('localPath')
-        NUM_OF_PROCESSES = int(VARS_FROM_FILE.get('processes'))
+    SPREADSHEET_ID = VARS_FROM_FILE.get('spreadsheetId')
+    RANGE_1 = VARS_FROM_FILE.get('range1')
+    RANGE_2_PRE = VARS_FROM_FILE.get('range2pre')
+    RANGE_3_PRE = VARS_FROM_FILE.get('range3pre')
+    RANGE_4 = VARS_FROM_FILE.get('range4')
+    MOD_URL_PRE = VARS_FROM_FILE.get('modURLpre')
+    MOD_URL_POST = VARS_FROM_FILE.get('modURLpost')
+    LOCAL_PATH = VARS_FROM_FILE.get('localPath')
+    NUM_OF_PROCESSES = int(VARS_FROM_FILE.get('processes'))
 except FileNotFoundError: 
     print('Variable file not found: ', VARIABLE_FILE)
     sys.exit()
@@ -81,10 +83,12 @@ def get_info_from_curse(line):
         DOWNLOAD_PATH = TABLE.xpath('//a[@class="button tip fa-icon-download icon-only"]/@href')[0]
         DOWNLOAD_URL = 'https://minecraft.curseforge.com' + DOWNLOAD_PATH
         NEW_FILE_ID = int(DOWNLOAD_PATH.split('/')[4])
-        FILENAME = TABLE.xpath('//div[@class="project-file-name-container"]/a/@data-name')[0].replace(' ', '') + '-' + str(NEW_FILE_ID) 
-        if FILENAME[-4:] != '.jar':
-            FILENAME += '.jar'
     if NEW_FILE_ID > OLD_FILE_ID:
+        REAL_URL = urllib.request.urlopen(DOWNLOAD_URL).geturl()
+        FILENAME = REAL_URL.split('/')[-1]
+        if FILENAME[-4:] != '.jar':
+            print('Error: Something changed with the download URL. Report this.')
+            sys.exit()
         MODS_NEEDING_UPDATES.append(MOD_NAME)
         FILES_TO_DOWNLOAD[FILENAME] = DOWNLOAD_URL
         line[2] = NEW_FILE_ID

@@ -3,6 +3,7 @@ This program obtains a list of Minecraft mods from a Google Sheet and checks it 
 
 ## Use
 1. Clone this repo
+1. You need to have Python installed (tested with 3.6.6)
 1. Make your own copy of [this demo sheet](https://docs.google.com/spreadsheets/d/1x4Gq7Uvn_huaaXHmJXdFpE1fbVlheOipG3AfwmuQ1tI/edit?usp=sharing)
 	1. You only have fill in columns A and B
 		1. Column A is the name that will be used in the program - this doesn't affect filenames
