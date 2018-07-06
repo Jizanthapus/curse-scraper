@@ -27,6 +27,7 @@ try:
         SPREADSHEET_ID = VARS_FROM_FILE.get('spreadsheetId')
         RANGE_1 = VARS_FROM_FILE.get('range1')
         RANGE_2_PRE = VARS_FROM_FILE.get('range2pre')
+        RANGE_3_PRE = VARS_FROM_FILE.get('range3pre')
         MOD_URL_PRE = VARS_FROM_FILE.get('modURLpre')
         MOD_URL_POST = VARS_FROM_FILE.get('modURLpost')
         LOCAL_PATH = VARS_FROM_FILE.get('localPath')
@@ -42,6 +43,7 @@ print('Files will be downloaded to:', LOCAL_PATH, '\n')
 # Fire up some more variables
 FILES_TO_DOWNLOAD = {}
 MODS_NEEDING_UPDATES = []
+INFO_TO_WRITE = []
 POOL = Pool(NUM_OF_PROCESSES)
 
 def download_entry(ENTRY):
@@ -53,13 +55,19 @@ def download_entry(ENTRY):
         print('Already exists: ', ENTRY)
     else:
             urllib.request.urlretrieve(FILES_TO_DOWNLOAD[ENTRY], FILE_PATH)
+            print('Downloaded:', ENTRY)
 
 def get_info_from_curse(line):
     '''
     Retrieve the mod info from curse
     '''
-    PROJECT_ID = line[2]
-    OLD_FILE_ID = line[3]
+    PROJECT_ID = line[1].split('/')[4]
+    if len(line) == 4:
+        OLD_FILE_ID = int(line[2])
+    else:
+        line.append(0)
+        OLD_FILE_ID = int(line[2])
+        line.append('Error')
     MOD_NAME = line[0]
     MOD_URL = MOD_URL_PRE + PROJECT_ID + MOD_URL_POST
     PAGE = requests.get(MOD_URL)
@@ -67,16 +75,15 @@ def get_info_from_curse(line):
     for TABLE in PAGE_DATA.xpath('//table[@class="listing listing-project-file project-file-listing b-table b-table-a"]'):
         DOWNLOAD_PATH = TABLE.xpath('//a[@class="button tip fa-icon-download icon-only"]/@href')[0]
         DOWNLOAD_URL = 'https://minecraft.curseforge.com' + DOWNLOAD_PATH
-        NEW_FILE_ID = DOWNLOAD_PATH.split('/')[4]
-        FILENAME = TABLE.xpath('//div[@class="project-file-name-container"]/a/@data-name')[0].replace(' ', '')
+        NEW_FILE_ID = int(DOWNLOAD_PATH.split('/')[4])
+        FILENAME = TABLE.xpath('//div[@class="project-file-name-container"]/a/@data-name')[0].replace(' ', '') + '-' + str(NEW_FILE_ID) 
         if FILENAME[-4:] != '.jar':
             FILENAME += '.jar'
-        MODIFIED_FILENAME = FILENAME + '-' + NEW_FILE_ID 
     if NEW_FILE_ID > OLD_FILE_ID:
         MODS_NEEDING_UPDATES.append(MOD_NAME)
-        FILES_TO_DOWNLOAD[MODIFIED_FILENAME] = DOWNLOAD_URL
-        line[3] = NEW_FILE_ID
-    line[4] = DOWNLOAD_URL
+        FILES_TO_DOWNLOAD[FILENAME] = DOWNLOAD_URL
+        line[2] = NEW_FILE_ID
+    line[3] = DOWNLOAD_URL
     
 # Setup the Sheets API
 print('Attempting to contact Sheets\n')
@@ -90,14 +97,17 @@ SERVICE = build('sheets', 'v4', http=CREDS.authorize(Http()))
 
 # Call the Sheets API
 # RESULT_1 is a range of values that will contain how many mods are in the list and when this program was last run 
-RESULT_1 = SERVICE.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID, range=RANGE_1).execute()                                  
+RESULT_1 = SERVICE.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID, majorDimension='COLUMNS', range=RANGE_1).execute()                                  
 
-# Use RESULT_1 to determine how many cells to request for RESULT_2
-NUM_MODS = RESULT_1.get('values')[0][1]
+# Use RESULT_1 to determine how many cells to request for RESULT_2 and RESULT_3
+NUM_MODS = RESULT_1.get('values')[0][0]
 print('Sheet indicates there are', NUM_MODS, 'mods to check\n')
 RANGE_2_BEGIN = RANGE_2_PRE[-1:]
 RANGE_2_END = int(NUM_MODS) + int(RANGE_2_BEGIN) - 1
 RANGE_2 = RANGE_2_PRE[:-1] + str(RANGE_2_END)
+RANGE_3_BEGIN = RANGE_3_PRE[-1:]
+RANGE_3_END = int(NUM_MODS) + int(RANGE_3_BEGIN) - 1
+RANGE_3 = RANGE_3_PRE[:-1] + str(RANGE_3_END)
 
 # RESULT_2 contains: mod names, link, old file id, and a download link
 RESULT_2 = SERVICE.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID, range=RANGE_2).execute()               
@@ -117,9 +127,11 @@ if len(MODS_NEEDING_UPDATES) > 0:
     print()
     
     # Write the updated info back to the sheet
-    MOD_DATA_FOR_SHEET = {'values': MODS_ONLY}
+    for line in MODS_ONLY:
+        INFO_TO_WRITE.append(line[2:4])
+    MOD_DATA_FOR_SHEET = {'values': INFO_TO_WRITE}
     print('Writing updated mod info back to Sheets\n')
-    RESULT_3 = SERVICE.spreadsheets().values().update(spreadsheetId=SPREADSHEET_ID, range=RANGE_2, valueInputOption='USER_ENTERED', body=MOD_DATA_FOR_SHEET).execute()
+    RESULT_3 = SERVICE.spreadsheets().values().update(spreadsheetId=SPREADSHEET_ID, range=RANGE_3, valueInputOption='USER_ENTERED', body=MOD_DATA_FOR_SHEET).execute()
         
     # Download the updated mods
     print('Starting downloads')
@@ -131,7 +143,10 @@ else:
 # Update the sheet to show this run
 TIME = datetime.datetime.now()
 TIME_STRING = TIME.strftime("%Y-%m-%d %H:%M")
-RESULT_1['values'][1][1] = TIME_STRING
+if len(RESULT_1['values'][0]) < 2:
+    RESULT_1['values'][0].append(TIME_STRING)
+else:
+    RESULT_1['values'][0][1] = TIME_STRING
 print('Writing the current time back to Sheets\n')
 RESULT_4 = SERVICE.spreadsheets().values().update(spreadsheetId=SPREADSHEET_ID, range=RANGE_1, valueInputOption='USER_ENTERED', body=RESULT_1).execute()
 
