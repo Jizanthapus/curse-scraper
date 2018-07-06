@@ -1,6 +1,10 @@
 # curse-scraper
 This program obtains a list of Minecraft mods from a Google Sheet and checks it against info from Curse. When an update is found, it's downloaded.
 
+## Limitations
+Each lookup requests the files page for version 1.12. From here the first (most recent) file in the table is downloaded. This means that the most recent file for ANY version of 1.12 (e.g. 1.12.1, 1.12.2) will be downloaded. Due to the maturity of 1.12.2,
+most mods either use this version, or they are compatible with it, so hopefully this won't be much of an issue.
+
 ## Use
 1. Clone this repo
 1. You need to have Python installed (tested with 3.6.6)

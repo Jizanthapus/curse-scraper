@@ -8,12 +8,15 @@ TODO: Add OLD_FILE_ID to the filename so it can be used to identify files in the
 TODO: Print time since last run
 TODO: Collect upload time from Curse to calculate and display how recently the update is
 TODO: (Maybe) Move to beautifulsoup for HTML parsing
+TODO: Split vars file into programVars and userVars for simplicity
+TODO: Add compatibility with other versions of MC
 '''
 
 # Plenty of imports
 import json
 import sys
 import urllib.request
+import urllib.parse
 from lxml import html
 import os.path
 from multiprocessing.dummy  import Pool
@@ -81,20 +84,25 @@ def get_info_from_curse(line):
         line.append('Error')
     MOD_NAME = line[0]
     MOD_URL = MOD_URL_PRE + PROJECT_ID + MOD_URL_POST
+    print('Checking on', MOD_NAME)
     PAGE = requests.get(MOD_URL)
     PAGE_DATA = html.fromstring(PAGE.content)
     for TABLE in PAGE_DATA.xpath('//table[@class="listing listing-project-file project-file-listing b-table b-table-a"]'):
         DOWNLOAD_PATH = TABLE.xpath('//a[@class="button tip fa-icon-download icon-only"]/@href')[0]
+        if not DOWNLOAD_PATH:
+            print('Something went wrong retrieving the download path')
+            sys.exit()
         DOWNLOAD_URL = 'https://minecraft.curseforge.com' + DOWNLOAD_PATH
         NEW_FILE_ID = int(DOWNLOAD_PATH.split('/')[4])
     if NEW_FILE_ID > OLD_FILE_ID:
         REAL_URL = urllib.request.urlopen(DOWNLOAD_URL).geturl()
         FILENAME = REAL_URL.split('/')[-1]
-        if FILENAME[-4:] != '.jar':
+        FINAL_FILENAME = urllib.parse.unquote(FILENAME)
+        if FINAL_FILENAME[-4:] != '.jar':
             print('Error: Something changed with the download URL. Report this.')
             sys.exit()
         MODS_NEEDING_UPDATES.append(MOD_NAME)
-        FILES_TO_DOWNLOAD[MOD_NAME] = {'currentFileID':NEW_FILE_ID, 'jar':FILENAME, 'downloadURL':DOWNLOAD_URL}
+        FILES_TO_DOWNLOAD[MOD_NAME] = {'currentFileID':NEW_FILE_ID, 'jar':FINAL_FILENAME, 'downloadURL':DOWNLOAD_URL}
         line[2] = NEW_FILE_ID
     line[3] = DOWNLOAD_URL
     
@@ -129,6 +137,7 @@ RESULT_2 = SERVICE.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID, ran
 # then find the latest jar and add it to a list to download
 print('Attempting to contact Curse for mod info\n')
 MODS_ONLY = RESULT_2.get('values')
+print(MODS_ONLY)
 POOL.map(get_info_from_curse, MODS_ONLY)
 
 # Setup time for reasons
