@@ -1,8 +1,9 @@
 {
 "spreadsheetId": "1x4Gq7Uvn_huaaXHmJXdFpE1fbVlheOipG3AfwmuQ1tI",
-"range1": "'Curse Mods'!A1:B2",
-"range2pre": "'Curse Mods'!A6:E6",
-"range3pre": "'Curse Mods'!D6:E6",
+"range1": "'Curse Mods'!B1",
+"range4": "'Curse Mods'!B2",
+"range2pre": "'Curse Mods'!A6:D6",
+"range3pre": "'Curse Mods'!C6:D6",
 "modURLpre": "https://minecraft.curseforge.com/projects/",
 "modURLpost": "/files?filter-game-version=2020709689%3A6756",
 "processes": "4",
