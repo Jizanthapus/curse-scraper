@@ -59,9 +59,9 @@ def download_entry(ENTRY):
     '''
     Function for downloading files
     '''
-    ENTRY_JAR = FILES_TO_DOWNLOAD[ENTRY][0]
+    ENTRY_JAR = FILES_TO_DOWNLOAD[ENTRY].get('jar')
     ENTRY_PATH = LOCAL_PATH + ENTRY_JAR
-    ENTRY_URL = FILES_TO_DOWNLOAD[ENTRY][1]
+    ENTRY_URL = FILES_TO_DOWNLOAD[ENTRY].get('downloadURL')
     if os.path.isfile(ENTRY_PATH):
         print('Already exists:', ENTRY_JAR)
     else:
@@ -94,7 +94,7 @@ def get_info_from_curse(line):
             print('Error: Something changed with the download URL. Report this.')
             sys.exit()
         MODS_NEEDING_UPDATES.append(MOD_NAME)
-        FILES_TO_DOWNLOAD[MOD_NAME] = {['currentFileID': NEW_FILE_ID, 'jar':FILENAME, 'downloadURL':DOWNLOAD_URL]}
+        FILES_TO_DOWNLOAD[MOD_NAME] = {'currentFileID':NEW_FILE_ID, 'jar':FILENAME, 'downloadURL':DOWNLOAD_URL}
         line[2] = NEW_FILE_ID
     line[3] = DOWNLOAD_URL
     
@@ -131,6 +131,13 @@ print('Attempting to contact Curse for mod info\n')
 MODS_ONLY = RESULT_2.get('values')
 POOL.map(get_info_from_curse, MODS_ONLY)
 
+# Setup time for reasons
+TIME = datetime.datetime.now()
+TIME_STRING = [[TIME.strftime("%Y-%m-%d %H:%M")]]
+TIME_STRING_2 = TIME.strftime("%y-%m-%d_%H-%M-")
+TIME_STRING_3 = TIME.strftime("%Y-%m-%d %H:%M")
+
+
 # See if any mods need updating
 if len(MODS_NEEDING_UPDATES) > 0:
     # List mods we need to update
@@ -139,16 +146,21 @@ if len(MODS_NEEDING_UPDATES) > 0:
         print(MOD)
     print()
     
+    # Write out a list of the updated mods
+    UPDATE_LIST_NAME_TIME = str(TIME_STRING_2) + str(UPDATE_LIST_NAME)
+    UPDATE_LIST_DATA = {'meta': {
+                                    'time':TIME_STRING_3,
+                                    'numModsUpdated': len(MODS_NEEDING_UPDATES)},
+                        'mods':FILES_TO_DOWNLOAD}
+    with open(UPDATE_LIST_NAME_TIME, 'w') as FILE:
+        json.dump(UPDATE_LIST_DATA, FILE)
+    
     # Write the updated info back to the sheet
     for line in MODS_ONLY:
         INFO_TO_WRITE.append(line[2:4])
     MOD_DATA_FOR_SHEET = {'values': INFO_TO_WRITE}
     print('Writing updated mod info back to Sheets\n')
     RESULT_3 = SERVICE.spreadsheets().values().update(spreadsheetId=SPREADSHEET_ID, range=RANGE_3, valueInputOption='USER_ENTERED', body=MOD_DATA_FOR_SHEET).execute()
-    
-    # Write out a list of the updated mods
-    with open(UPDATE_LIST_NAME, 'w') as FILE:
-        json.dump(FILES_TO_DOWNLOAD, FILE)
     
     # Download the updated mods
     print('Starting downloads')
@@ -158,8 +170,6 @@ else:
     print('Looks like all the mods are currently up to date\n')
     
 # Update the sheet to show this run
-TIME = datetime.datetime.now()
-TIME_STRING = [[TIME.strftime("%Y-%m-%d %H:%M")]]
 print('Writing the current time back to Sheets\n')
 TIME_TO_WRITE = {'values': TIME_STRING}
 RESULT_4 = SERVICE.spreadsheets().values().update(spreadsheetId=SPREADSHEET_ID, range=RANGE_4, valueInputOption='USER_ENTERED', body=TIME_TO_WRITE).execute()

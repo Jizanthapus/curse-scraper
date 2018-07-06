@@ -8,6 +8,7 @@ data_1.json
 data_2.json
 data.json
 mod_list.json
+*update_list.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
