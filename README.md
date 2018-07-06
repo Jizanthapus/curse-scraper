@@ -15,9 +15,15 @@ This program obtains a list of Minecraft mods from a Google Sheet and checks it 
 1. Prepare your `vars.json`. If you are using an unaltered copy of the Demo sheet, then you only have to change the `spreadsheetId` and `localPath`.
 	1. Rename `sample_vars.json` to `vars.json`
 	1. Fill in your values for:
-		1. `spreadsheetId` This is your the big random string in the URL of your sheet.
-		1. `range1` This is where the program looks for the number of mods in your list and the last run date. **If you are using the provided template there is no need to change this.**
-		1. `range2pre` This is where the program looks for all the mods you want checked. **If you are using the provided template there is no need to change this.**
-		1. `range3pre` This is a subset of range2pre that contains cells that will be written to by the program. **If you are using the provided template there is no need to change this.**
-		1. `processes` This is the number of processes that the program will launch when making HTTP requests and downloads from Curse.
-		1. `localPath` This is where the program will attempt to place files.
+		* `spreadsheetId` Big random string in the URL of your sheet.
+		* `localPath` Directory where the program will attempt to place downloaded mod jars.
+
+### Other variables in `vars.json`
+**If you are using the Demo sheet there is no need to change these.**
+* `range1` Cell location for the number of mods in your list. 
+* `range4` Cell location for the last run date. 
+* `range2pre` Where the program looks for all the mods you want checked.
+* `range3pre` A subset of range2pre that contains cells that will be written to by the program.
+* `modURLpre` First part of the Curseforge URL (before the project ID)
+* `modURLpost` Second part of the Curseforge URL (after the project ID)
+* `processes` The number of processes that the program will launch when making HTTP requests and downloads from Curse.
