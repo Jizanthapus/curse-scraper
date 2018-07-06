@@ -3,16 +3,16 @@ This program obtains a list of Minecraft mods from a Google Sheet and checks it 
 
 ## Use
 1. Clone this repo
-1. Make your own copy of [this Demo sheet](https://docs.google.com/spreadsheets/d/1x4Gq7Uvn_huaaXHmJXdFpE1fbVlheOipG3AfwmuQ1tI/edit?usp=sharing)
-	1. Fill in the number of mods you put in the list to cell `B1`
-	1. You only have to add data to columns A and B
+1. Make your own copy of [this demo sheet](https://docs.google.com/spreadsheets/d/1x4Gq7Uvn_huaaXHmJXdFpE1fbVlheOipG3AfwmuQ1tI/edit?usp=sharing)
+	1. You only have fill in columns A and B
 		1. Column A is the name that will be used in the program - this doesn't affect filenames
-		1. Column B should contain the link to the project on Curse Forge - see template for example
-1. Check to make sure you have the required imports
+		1. Column B should contain the link to the project on Curse Forge - see demo sheet for example
+	1. Fill in the number of mods you put in the list to cell `B1` if it doesn't update automatically
+1. Check to make sure you have the required python imports installed
 1. Give yourself [API access to Google Sheets](https://developers.google.com/sheets/api/quickstart/python)
 	1. Make sure you request read and write access using `https://www.googleapis.com/auth/spreadsheets` for `SCOPE`
 	1. Add the 2 files this process generates to the directory where you cloned this repo
-1. Prepare your `vars.json`. If you are using an unaltered copy of the Demo sheet, then you only have to change the `spreadsheetId` and `localPath`.
+1. Prepare your `vars.json`. If you are using an unaltered copy of the demo sheet, then you only have to change the `spreadsheetId` and `localPath`.
 	1. Rename `sample_vars.json` to `vars.json`
 	1. Fill in your values for:
 		* `spreadsheetId` Big random string in the URL of your sheet.
