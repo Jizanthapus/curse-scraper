@@ -86,7 +86,10 @@ def get_info_from_curse(line):
     MOD_MC_VER = line[1]
     PROJECT_ID = line[2].split('/')[4]
     if len(line) == 5:
-        OLD_FILE_ID = int(line[3])
+        if line[3] == '':
+            OLD_FILE_ID = 0
+        else:
+            OLD_FILE_ID = int(line[3])
     else:
         while (len(line) > 5):
             line.append(0)
@@ -170,7 +173,7 @@ if len(MODS_NEEDING_UPDATES) > 0:
                                     'numModsUpdated': len(MODS_NEEDING_UPDATES)},
                         'mods':FILES_TO_DOWNLOAD}
     with open(UPDATE_LIST_NAME_TIME, 'w') as FILE:
-        json.dump(UPDATE_LIST_DATA, FILE, indent=4)
+        json.dump(UPDATE_LIST_DATA, FILE, indent=2, sort_keys=True)
     
     # Write the updated info back to the sheet
     for line in MODS_ONLY:
