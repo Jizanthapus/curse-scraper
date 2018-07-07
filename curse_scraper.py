@@ -48,7 +48,7 @@ try:
     MOD_URL_POST = PROGRAM_VARS.get('modURLpost')
     LOCAL_PATH = USER_VARS.get('localPath')
     UPDATE_LIST_NAME = PROGRAM_VARS.get('updateListName')
-    NUM_OF_PROCESSES = int(PROGRAM_VARS.get('processes'))
+    NUM_OF_PROCESSES = int(USER_VARS.get('processes'))
     FILTERS = PROGRAM_VARS.get('filters')
 except FileNotFoundError: 
     print('ERROR: One or more of the variable files were not found')
@@ -91,7 +91,7 @@ def get_info_from_curse(line):
         else:
             OLD_FILE_ID = int(line[3])
     else:
-        while (len(line) > 5):
+        while (len(line) < 5):
             line.append(0)
         OLD_FILE_ID = int(line[3])
     MOD_URL = MOD_URL_PRE + PROJECT_ID + MOD_URL_POST + FILTERS.get(MOD_MC_VER)
@@ -115,7 +115,7 @@ def get_info_from_curse(line):
         MODS_NEEDING_UPDATES.append(MOD_NAME)
         FILES_TO_DOWNLOAD[MOD_NAME] = {'currentFileID':NEW_FILE_ID, 'jar':FINAL_FILENAME, 'downloadURL':DOWNLOAD_URL}
         line[3] = NEW_FILE_ID
-    line[4] = DOWNLOAD_URL
+        line[4] = DOWNLOAD_URL
     
 # Setup the Sheets API
 print('Attempting to contact Sheets\n')
@@ -177,7 +177,7 @@ if len(MODS_NEEDING_UPDATES) > 0:
     
     # Write the updated info back to the sheet
     for line in MODS_ONLY:
-        INFO_TO_WRITE.append(line[2:4])
+        INFO_TO_WRITE.append(line[ (len(line)-2) : len(line) ])
     MOD_DATA_FOR_SHEET = {'values': INFO_TO_WRITE}
     print('Writing updated mod info back to Sheets\n')
     RESULT_3 = SERVICE.spreadsheets().values().update(spreadsheetId=SPREADSHEET_ID, range=RANGE_3, valueInputOption='USER_ENTERED', body=MOD_DATA_FOR_SHEET).execute()
