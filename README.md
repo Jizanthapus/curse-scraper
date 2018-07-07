@@ -18,6 +18,7 @@ This program obtains a list of Minecraft mods from a Google Sheet and checks it 
 	1. Rename `sample_userVars.json` to `userVars.json`
 	1. Fill in your values for:
 		* `spreadsheetId` Big random string in the URL of your sheet. The demo sheet ID is provided by default.
+		* `processes` The number of processes that the program will launch when making HTTP requests and downloads from Curse.
 		* `localPath` Directory where the program will attempt to place downloaded mod jars.
 
 ### Variables in `programVars.json`
@@ -30,5 +31,4 @@ This program obtains a list of Minecraft mods from a Google Sheet and checks it 
 * `modURLpre` First part of the Curseforge URL (before the project ID)
 * `modURLpost` Second part of the Curseforge URL (after the project ID)
 * `filters` Entries for the MC versions that are appended to modURLpost to search for mods
-* `processes` The number of processes that the program will launch when making HTTP requests and downloads from Curse.
 * `updateListName` File where info on the mods updated will be saved
