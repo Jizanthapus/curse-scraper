@@ -1,6 +1,6 @@
 '''
 Created on Jul 4, 2018
-v1.0
+
 This program obtains a list of mods from a Google Sheet and checks it against info from Curse. When an update is found, it's downloaded. 
 
 TODO: Print time since last run
@@ -60,6 +60,7 @@ print('Files will be downloaded to:', LOCAL_PATH, '\n')
 
 # Fire up some more variables
 FILES_TO_DOWNLOAD = {}
+ALL_MODS_INFO = {}
 MODS_NEEDING_UPDATES = []
 INFO_TO_WRITE = []
 UPDATE_LIST = []
@@ -105,15 +106,20 @@ def get_info_from_curse(line):
             sys.exit()
         DOWNLOAD_URL = 'https://minecraft.curseforge.com' + DOWNLOAD_PATH
         NEW_FILE_ID = int(DOWNLOAD_PATH.split('/')[4])
-    if NEW_FILE_ID > OLD_FILE_ID:
         REAL_URL = urllib.request.urlopen(DOWNLOAD_URL).geturl()
         FILENAME = REAL_URL.split('/')[-1]
         FINAL_FILENAME = urllib.parse.unquote(FILENAME)
         if FINAL_FILENAME[-4:] != '.jar':
             print('Error: Something changed with the download URL. Report this.')
             sys.exit()
+    ALL_MODS_INFO[MOD_NAME] = {'currentFileID':NEW_FILE_ID,
+                               'jar':FINAL_FILENAME,
+                               'downloadURL':DOWNLOAD_URL}
+    if NEW_FILE_ID > OLD_FILE_ID:
         MODS_NEEDING_UPDATES.append(MOD_NAME)
-        FILES_TO_DOWNLOAD[MOD_NAME] = {'currentFileID':NEW_FILE_ID, 'jar':FINAL_FILENAME, 'downloadURL':DOWNLOAD_URL}
+        FILES_TO_DOWNLOAD[MOD_NAME] = {'currentFileID':NEW_FILE_ID,
+                                       'jar':FINAL_FILENAME,
+                                       'downloadURL':DOWNLOAD_URL}
         line[3] = NEW_FILE_ID
         line[4] = DOWNLOAD_URL
     
@@ -167,11 +173,11 @@ if len(MODS_NEEDING_UPDATES) > 0:
     print()
     
     # Write out a list of the updated mods
-    UPDATE_LIST_NAME_TIME = str(TIME_STRING_2) + str(UPDATE_LIST_NAME)
-    UPDATE_LIST_DATA = {'meta': {
-                                    'time':TIME_STRING_3,
-                                    'numModsUpdated': len(MODS_NEEDING_UPDATES)},
-                        'mods':FILES_TO_DOWNLOAD}
+    UPDATE_LIST_NAME_TIME = LOCAL_PATH + str(TIME_STRING_2) + str(UPDATE_LIST_NAME)
+    UPDATE_LIST_DATA = {'date':TIME_STRING_3,
+                        'numModsUpdated': len(MODS_NEEDING_UPDATES),
+                        'modsUpdated':FILES_TO_DOWNLOAD,
+                        'allMods': ALL_MODS_INFO}
     with open(UPDATE_LIST_NAME_TIME, 'w') as FILE:
         json.dump(UPDATE_LIST_DATA, FILE, indent=2, sort_keys=True)
     
