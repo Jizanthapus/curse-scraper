@@ -11,6 +11,9 @@ This program obtains a list of Minecraft mods from a Google Sheet and checks it 
 		1. Column C should contain the link to the project on Curse Forge - see demo sheet for example
 	1. Fill in the number of mods you put in the list to cell `B1` if it doesn't update automatically
 1. Check to make sure you have the required python imports installed
+	1. requests
+	1. lxml
+	1. google-api-python-client
 1. Give yourself [API access to Google Sheets](https://developers.google.com/sheets/api/quickstart/python)
 	1. Make sure you request read and write access using `https://www.googleapis.com/auth/spreadsheets` for `SCOPE`
 	1. Add the 2 files this process generates to the directory where you cloned this repo
