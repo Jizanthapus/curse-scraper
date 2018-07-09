@@ -100,12 +100,12 @@ def get_info_from_curse(line):
     PAGE = requests.get(MOD_URL)
     PAGE_DATA = html.fromstring(PAGE.content)
     for TABLE in PAGE_DATA.xpath('//table[@class="listing listing-project-file project-file-listing b-table b-table-a"]'):
-        DOWNLOAD_PATH = TABLE.xpath('//a[@class="button tip fa-icon-download icon-only"]/@href')[0]
+        DOWNLOAD_PATH = TABLE.xpath('//a[@class="button tip fa-icon-download icon-only"]/@href')
         if not DOWNLOAD_PATH:
-            print('Something went wrong retrieving the download path')
+            print('Something went wrong retrieving the download path for', MOD_NAME)
             sys.exit()
-        DOWNLOAD_URL = 'https://minecraft.curseforge.com' + DOWNLOAD_PATH
-        NEW_FILE_ID = int(DOWNLOAD_PATH.split('/')[4])
+        DOWNLOAD_URL = 'https://minecraft.curseforge.com' + DOWNLOAD_PATH[0]
+        NEW_FILE_ID = int(DOWNLOAD_PATH[0].split('/')[4])
         REAL_URL = urllib.request.urlopen(DOWNLOAD_URL).geturl()
         FILENAME = REAL_URL.split('/')[-1]
         FINAL_FILENAME = urllib.parse.unquote(FILENAME)
