@@ -106,20 +106,24 @@ def get_info_from_curse(line):
             sys.exit()
         DOWNLOAD_URL = 'https://minecraft.curseforge.com' + DOWNLOAD_PATH[0]
         NEW_FILE_ID = int(DOWNLOAD_PATH[0].split('/')[4])
+        if not NEW_FILE_ID:
+            print('Something went wrong retrieving the new file ID for', MOD_NAME)
+            print(DOWNLOAD_PATH)
+            sys.exit()
         REAL_URL = urllib.request.urlopen(DOWNLOAD_URL).geturl()
         FILENAME = REAL_URL.split('/')[-1]
         FINAL_FILENAME = urllib.parse.unquote(FILENAME)
         if FINAL_FILENAME[-4:] != '.jar':
             print('Error: Something changed with the download URL. Report this.')
             sys.exit()
-    ALL_MODS_INFO[MOD_NAME] = {'currentFileID':NEW_FILE_ID,
-                               'jar':FINAL_FILENAME,
-                               'downloadURL':DOWNLOAD_URL}
-    if NEW_FILE_ID > OLD_FILE_ID:
-        MODS_NEEDING_UPDATES.append(MOD_NAME)
-        FILES_TO_DOWNLOAD[MOD_NAME] = {'currentFileID':NEW_FILE_ID,
-                                       'jar':FINAL_FILENAME,
-                                       'downloadURL':DOWNLOAD_URL}
+        ALL_MODS_INFO[MOD_NAME] = {'currentFileID':NEW_FILE_ID,
+                                   'jar':FINAL_FILENAME,
+                                   'downloadURL':DOWNLOAD_URL}
+        if NEW_FILE_ID > OLD_FILE_ID:
+            MODS_NEEDING_UPDATES.append(MOD_NAME)
+            FILES_TO_DOWNLOAD[MOD_NAME] = {'currentFileID':NEW_FILE_ID,
+                                           'jar':FINAL_FILENAME,
+                                           'downloadURL':DOWNLOAD_URL}
         line[3] = NEW_FILE_ID
         line[4] = DOWNLOAD_URL
     
