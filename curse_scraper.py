@@ -15,7 +15,6 @@ try:
     import json
     import time
     import sys
-    import urllib.request
     import urllib.parse
     from lxml import html
     import os.path
@@ -77,8 +76,9 @@ def download_entry(ENTRY):
     if os.path.isfile(ENTRY_PATH):
         print('Already exists:', ENTRY_JAR)
     else:
-            urllib.request.urlretrieve(ENTRY_URL, ENTRY_PATH)
-            print('Downloaded:', ENTRY, '->', ENTRY_JAR)
+            r = requests.get(ENTRY_URL, allow_redirects=True)
+            open(ENTRY_PATH, 'wb').write(r.content)
+            print('Downloaded:', ENTRY, 'as', ENTRY_JAR)
 
 def get_info_from_curse(line):
     '''
@@ -111,11 +111,10 @@ def get_info_from_curse(line):
             print('Something went wrong retrieving the new file ID for', MOD_NAME)
             print(DOWNLOAD_PATH)
             sys.exit()
-        print('Download URL:', DOWNLOAD_URL)
-        print('Download path:', DOWNLOAD_PATH[0])
         try:
-            REAL_URL = urllib.request.urlopen(DOWNLOAD_URL).geturl()
-        except urllib.error.HTTPError as e:
+            r = requests.get(DOWNLOAD_URL, allow_redirects=True)
+            REAL_URL = r.url
+        except ConnectionError as e:
             print(e.fp.read())
             sys.exit()
         FILENAME = REAL_URL.split('/')[-1]
@@ -133,7 +132,7 @@ def get_info_from_curse(line):
                                            'downloadURL':DOWNLOAD_URL}
         line[3] = NEW_FILE_ID
         line[4] = DOWNLOAD_URL
-        time.sleep(5)
+        time.sleep(1)
     
 # Setup the Sheets API
 print('Attempting to contact Sheets\n')
@@ -167,8 +166,6 @@ RESULT_2 = SERVICE.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID, ran
 print('Attempting to contact Curse for mod info')
 MODS_ONLY = RESULT_2.get('values')
 print('Looking for these mods:')
-for line in MODS_ONLY:
-    print(line)
 POOL.map(get_info_from_curse, MODS_ONLY)
 print()
 
