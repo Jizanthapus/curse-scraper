@@ -13,6 +13,7 @@ print('curse-scraper beginning\n')
 # Plenty of imports
 try:
     import json
+    import time
     import sys
     import urllib.request
     import urllib.parse
@@ -110,7 +111,13 @@ def get_info_from_curse(line):
             print('Something went wrong retrieving the new file ID for', MOD_NAME)
             print(DOWNLOAD_PATH)
             sys.exit()
-        REAL_URL = urllib.request.urlopen(DOWNLOAD_URL).geturl()
+        print('Download URL:', DOWNLOAD_URL)
+        print('Download path:', DOWNLOAD_PATH[0])
+        try:
+            REAL_URL = urllib.request.urlopen(DOWNLOAD_URL).geturl()
+        except urllib.error.HTTPError as e:
+            print(e.fp.read())
+            sys.exit()
         FILENAME = REAL_URL.split('/')[-1]
         FINAL_FILENAME = urllib.parse.unquote(FILENAME)
         if FINAL_FILENAME[-4:] != '.jar':
@@ -126,6 +133,7 @@ def get_info_from_curse(line):
                                            'downloadURL':DOWNLOAD_URL}
         line[3] = NEW_FILE_ID
         line[4] = DOWNLOAD_URL
+        time.sleep(5)
     
 # Setup the Sheets API
 print('Attempting to contact Sheets\n')
@@ -158,6 +166,9 @@ RESULT_2 = SERVICE.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID, ran
 # then find the latest jar and add it to a list to download
 print('Attempting to contact Curse for mod info')
 MODS_ONLY = RESULT_2.get('values')
+print('Looking for these mods:')
+for line in MODS_ONLY:
+    print(line)
 POOL.map(get_info_from_curse, MODS_ONLY)
 print()
 
